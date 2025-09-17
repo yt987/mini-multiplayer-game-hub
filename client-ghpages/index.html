@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mini Multiplayer Game Hub — v4</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Mini Multiplayer Game Hub — v4</h1>
+    <p>Games: Tic-Tac-Toe, Connect Four, Checkers, Battleship</p>
+    <div>
+      <label>Game: 
+        <select id="gameSel">
+          <option value="ttt">Tic-Tac-Toe</option>
+          <option value="c4">Connect Four</option>
+          <option value="checkers">Checkers</option>
+          <option value="bship">Battleship</option>
+        </select>
+      </label>
+      <input id="nickname" placeholder="Nickname" />
+      <input id="roomId" placeholder="Room ID" />
+      <button id="joinBtn">Join</button>
+    </div>
+    <div id="meta"></div>
+    <div id="board" class="board"></div>
+    <button id="resetBtn">Reset</button>
+    <div>
+      <h3>Leaderboard</h3>
+      <ul id="lb"></ul>
+    </div>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

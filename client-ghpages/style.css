@@ -1,0 +1,4 @@
+/* CSS included in earlier build; using compact version for sandbox. */
+body{margin:0;font-family:system-ui;background:#0b1020;color:#e5e7eb}
+.board{margin:10px auto;display:grid;justify-content:center;gap:8px}
+/* (Full CSS is included in previous zip, keeping client light in this step.) */
