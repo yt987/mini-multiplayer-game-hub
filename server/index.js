@@ -15,8 +15,12 @@ const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(cors());
 app.use(express.json());
+
+// If you want Render to serve the client too, point to ../client or a /public folder.
+// (Keeping this line identical to what you already had.)
 app.use(express.static(path.join(__dirname, '..', 'client')));
 
+// Leaderboard API
 app.get('/api/leaderboard', (req,res)=>{
   try { res.json(topWins(20)); } catch(e){ console.error(e); res.status(500).json({error:'lb'}); }
 });
@@ -43,18 +47,19 @@ function winC4(b){
   return b.every(row=>row.every(Boolean))?'draw':null;
 }
 
-// ---------- Checkers (simplified single-jump) ----------
+// ---------- Checkers (simplified with forced-capture + kinging) ----------
 const CK=8;
 function makeCheckers(){
   const board=Array.from({length:CK},()=>Array(CK).fill(null));
   for(let r=0;r<3;r++) for(let c=0;c<CK;c++) if((r+c)%2===1) board[r][c]='r';
   for(let r=CK-3;r<CK;r++) for(let c=0;c<CK;c++) if((r+c)%2===1) board[r][c]='b';
-  return { game:'checkers', players:{}, board, turn:'r', state:'waiting' };
+  return { game:'checkers', players:{}, board, turn:'r', state:'waiting', mustContinue:null };
 }
-function inb(r,c){ return r>=0&&r<CK&&c>=0&&c<CK; }
-function isKing(p){ return p==='R'||p==='B'; }
-function ownerOf(p){ return p && (p.toLowerCase()); }
-function dirFor(p){ return (p==='r'||p==='R')?1:-1; }
+const inb=(r,c)=>r>=0&&r<CK&&c>=0&&c<CK;
+const isKing=(p)=>p==='R'||p==='B';
+const ownerOf=(p)=>p && p.toLowerCase();
+const dirFor=(p)=> (p==='r'||p==='R')?1:-1;
+
 function hasCapture(board, side){
   const me = new Set(side=== 'r'? ['r','R'] : ['b','B']);
   const opp = new Set(side=== 'r'? ['b','B'] : ['r','R']);
@@ -68,33 +73,57 @@ function hasCapture(board, side){
   }
   return false;
 }
-function moveCheckers(board, fromR, fromC, toR, toC){
-  const p = board[fromR]?.[fromC]; if(!p) return { ok:false };
-  const side = ownerOf(p);
-  const dr = toR-fromR, dc = toC-fromC;
-  if(!inb(toR,toC) || board[toR][toC]) return { ok:false };
-  const mustCapture = hasCapture(board, side);
-  const absR=Math.abs(dr), absC=Math.abs(dc);
-  const isKingPiece=isKing(p);
-  const fwd = dirFor(p);
-  if(absR===1 && absC===1 && !mustCapture){
-    if(isKingPiece || dr===fwd){
-      board[toR][toC]=p; board[fromR][fromC]=null;
-      if(side==='r' && toR===CK-1 && p==='r') board[toR][toC]='R';
-      if(side==='b' && toR===0 && p==='b') board[toR][toC]='B';
-      return { ok:true, captured:false };
-    }
+function hasAnyCaptureForPiece(board, turn, r, c, piece){
+  const dirs=(piece==='R'||piece==='B')?[[1,1],[1,-1],[-1,1],[-1,-1]]: [[dirFor(piece),1],[dirFor(piece),-1]];
+  for(const [dr,dc] of dirs){
+    const r1=r+dr, c1=c+dc, r2=r+2*dr, c2=c+2*dc;
+    if(inb(r2,c2) && board[r1]?.[c1] && ownerOf(board[r1][c1])!==ownerOf(piece) && !board[r2][c2]) return true;
   }
+  return false;
+}
+function moveCheckers(state, from, to){
+  const board = state.board.map(row=>row.slice());
+  const turn = state.turn;
+  const fr=from.r, fc=from.c, tr=to.r, tc=to.c;
+  const p=board[fr]?.[fc]; if(!p || ownerOf(p)!==turn) return { ok:false };
+  if(board[tr]?.[tc]) return { ok:false };
+
+  // enforce continuing same piece during multi-capture
+  if(state.mustContinue && (state.mustContinue.r!==fr || state.mustContinue.c!==fc)) return { ok:false };
+
+  const king=isKing(p);
+  const dr=tr-fr, dc=tc-fc; const absR=Math.abs(dr), absC=Math.abs(dc);
+  const fwd=dirFor(p);
+  const forced=hasCapture(board, turn);
+
+  // simple move
+  if(absR===1 && absC===1 && !forced){
+    if(king || dr===fwd){
+      board[tr][tc]=p; board[fr][fc]=null;
+      if(turn==='r' && tr===CK-1 && p==='r') board[tr][tc]='R';
+      if(turn==='b' && tr===0 && p==='b') board[tr][tc]='B';
+      return { ok:true, board, switchTurn:true, mustContinue:null };
+    }
+    return { ok:false };
+  }
+
+  // capture
   if(absR===2 && absC===2){
-    const midR=fromR+dr/2, midC=fromC+dc/2;
-    const midP=board[midR][midC];
-    if(midP && ownerOf(midP)!==side && (isKingPiece || dr===2*fwd)){
-      board[toR][toC]=p; board[fromR][fromC]=null; board[midR][midC]=null;
-      if(side==='r' && toR===CK-1 && p==='r') board[toR][toC]='R';
-      if(side==='b' && toR===0 && p==='b') board[toR][toC]='B';
-      return { ok:true, captured:true };
+    const mr=fr+dr/2, mc=fc+dc/2;
+    const mid=board[mr][mc];
+    if(!mid || ownerOf(mid)===turn) return { ok:false };
+    if(!king && dr!==2*fwd) return { ok:false };
+    board[tr][tc]=p; board[fr][fc]=null; board[mr][mc]=null;
+    if(turn==='r' && tr===CK-1 && p==='r') board[tr][tc]='R';
+    if(turn==='b' && tr===0 && p==='b') board[tr][tc]='B';
+    // multi-capture?
+    const pieceNow = board[tr][tc];
+    if(hasAnyCaptureForPiece(board, turn, tr, tc, pieceNow)){
+      return { ok:true, board, switchTurn:false, mustContinue:{r:tr,c:tc} };
     }
+    return { ok:true, board, switchTurn:true, mustContinue:null };
   }
+
   return { ok:false };
 }
 function winCheckers(board){
@@ -105,7 +134,7 @@ function winCheckers(board){
     if(side==='r') hasR=true; else hasB=true;
     const dirs=isKing(p)?[[1,1],[1,-1],[-1,1],[-1,-1]]: [[dirFor(p),1],[dirFor(p),-1]];
     for(const [dr,dc] of dirs){
-      const r1=r+dr, c1=c+dc; const r2=r+2*dr, c2=r+2*dc;
+      const r1=r+dr, c1=c+dc; const r2=r+2*dr, c2=c+2*dc;
       if(inb(r1,c1) && !board[r1][c1]) { if(side==='r') movesR=true; else movesB=true; }
       if(inb(r2,c2) && board[r1]?.[c1] && ownerOf(board[r1][c1])!==side && !board[r2][c2]) { if(side==='r') movesR=true; else movesB=true; }
     }
@@ -118,7 +147,7 @@ function winCheckers(board){
 // ---------- Battleship ----------
 const BSN=10;
 const SHIPS=[5,4,3,3,2];
-function makeEmpty(n){ return Array.from({length:n},()=>Array(n).fill(0)); }
+const makeEmpty=(n)=>Array.from({length:n},()=>Array(n).fill(0));
 function placeRandom(){
   const grid=makeEmpty(BSN);
   let id=1;
@@ -153,17 +182,6 @@ function makeBShip(){
     shotsA:makeEmpty(BSN), shotsB:makeEmpty(BSN)
   };
 }
-function fireAt(room, attacker, r, c){
-  const defender = attacker==='A' ? 'B' : 'A';
-  const shots = attacker==='A'? room.shotsA : room.shotsB;
-  if(shots[r][c]!==0) return { ok:false };
-  shots[r][c]=1;
-  const ships = defender==='A'? room.shipsA : room.shipsB;
-  const hits = defender==='A'? room.hitsA : room.hitsB;
-  const target = ships[r][c];
-  if(target!==0){ hits[r][c]=1; return { ok:true, hit:true, sunk: shipSunk(ships,hits,target) }; }
-  return { ok:true, hit:false, sunk:false };
-}
 function shipSunk(ships,hits,id){
   for(let i=0;i<BSN;i++) for(let j=0;j<BSN;j++){
     if(ships[i][j]===id && hits[i][j]!==1) return false;
@@ -175,6 +193,17 @@ function allSunk(ships,hits){
     if(ships[i][j]!==0 && hits[i][j]!==1) return false;
   }
   return true;
+}
+function fireAt(room, attacker, r, c){
+  const defender = attacker==='A' ? 'B' : 'A';
+  const shots = attacker==='A'? room.shotsA : room.shotsB;
+  if(shots[r][c]!==0) return { ok:false };
+  shots[r][c]=1;
+  const ships = defender==='A'? room.shipsA : room.shipsB;
+  const hits = defender==='A'? room.hitsA : room.hitsB;
+  const target = ships[r][c];
+  if(target!==0){ hits[r][c]=1; return { ok:true, hit:true, sunk: shipSunk(ships,hits,target) }; }
+  return { ok:true, hit:false, sunk:false };
 }
 
 // ---------- Socket Wiring ----------
@@ -247,11 +276,18 @@ io.on('connection',(socket)=>{
     else if(game==='checkers'){
       const { from, to } = payload;
       if(sym!==room.turn) return;
-      const mv = moveCheckers(room.board, from.r, from.c, to.r, to.c);
+      const mv = moveCheckers(room, from, to);
       if(!mv.ok) return;
+      room.board = mv.board;
+      if(mv.mustContinue){
+        room.mustContinue = mv.mustContinue;
+      } else {
+        room.mustContinue = null;
+        room.turn = room.turn==='r' ? 'b' : 'r';
+      }
       const w=winCheckers(room.board);
       if(w==='r'||w==='b') endWithWin(room,key,w);
-      else { room.turn = room.turn==='r'?'b':'r'; io.to(key).emit('game_state', serializeState(room)); }
+      else io.to(key).emit('game_state', serializeState(room));
     }
     else if(game==='bship'){
       const { r, c } = payload;
