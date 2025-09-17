@@ -34,9 +34,42 @@
       for(let r=0;r<8;r++) for(let c=0;c<8;c++){ const tile=document.createElement('div'); tile.className='ck '+(((r+c)%2)?'dark':'light'); tile.dataset.r=r; tile.dataset.c=c; boardEl.appendChild(tile); }
       boardEl.className='board board-ck';
     } else if(currentGame==='bship'){
-      for(let r=0;r<10;r++) for(let c=0;c<10;c++){ const div=document.createElement('div'); div.className='bs-cell own'; div.dataset.r=r; div.dataset.c=c; div.dataset.board='own'; boardEl.appendChild(div); }
-      for(let r=0;r<10;r++) for(let c=0;c<10;c++){ const div=document.createElement('div'); div.className='bs-cell target'; div.dataset.r=r; div.dataset.c=c; div.dataset.board='target'; boardEl.appendChild(div); }
-      boardEl.className='board board-bs';
+      // Build two labeled grids: Your Fleet (left) and Target Grid (right)
+      boardEl.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.style.display = 'grid';
+      wrap.style.gridTemplateColumns = '1fr 1fr';
+      wrap.style.gap = '18px';
+
+      const ownBox = document.createElement('div');
+      const tgtBox = document.createElement('div');
+      ownBox.innerHTML = `<div class="muted" style="margin-bottom:6px">Your Fleet</div>`;
+      tgtBox.innerHTML = `<div class="muted" style="margin-bottom:6px">Target Grid</div>`;
+
+      const own = document.createElement('div');
+      own.className = 'board board-bs';
+      for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) {
+        const d = document.createElement('div');
+        d.className = 'bs-cell own';
+        d.dataset.board = 'own'; d.dataset.r = r; d.dataset.c = c;
+        own.appendChild(d);
+      }
+
+      const tgt = document.createElement('div');
+      tgt.className = 'board board-bs';
+      for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) {
+        const d = document.createElement('div');
+        d.className = 'bs-cell target';
+        d.dataset.board = 'target'; d.dataset.r = r; d.dataset.c = c;
+        tgt.appendChild(d);
+      }
+
+      ownBox.appendChild(own);
+      tgtBox.appendChild(tgt);
+      wrap.appendChild(ownBox);
+      wrap.appendChild(tgtBox);
+      boardEl.appendChild(wrap);
+      // no boardEl.className here; the inner boards already have classes
     }
   }
   buildBoard();
