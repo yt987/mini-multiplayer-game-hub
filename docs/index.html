@@ -27,14 +27,8 @@
     <main class="grid">
       <section class="card join">
         <h2>Join / Create Room</h2>
-        <div class="form-row">
-          <label>Nickname</label>
-          <input id="nickname" placeholder="e.g., Yohana" />
-        </div>
-        <div class="form-row">
-          <label>Room ID</label>
-          <input id="roomId" placeholder="e.g., bubbles" />
-        </div>
+        <div class="form-row"><label>Nickname</label><input id="nickname" placeholder="e.g., Yohana" /></div>
+        <div class="form-row"><label>Room ID</label><input id="roomId" placeholder="e.g., bubbles" /></div>
         <button id="joinBtn" class="btn-primary">Join Room</button>
         <p id="status" class="muted"></p>
       </section>
@@ -48,23 +42,15 @@
           <div>You are: <span id="youLabel">—</span></div>
         </div>
         <div class="board-wrap">
-          <div id="board" class="board"></div>
+          <div id="board" class="board board-ttt"></div>
           <div id="result" class="result-banner"></div>
         </div>
-        <div class="actions">
-          <button id="resetBtn" class="btn-ghost">Reset Game</button>
-        </div>
+        <div class="actions"><button id="resetBtn" class="btn-ghost">Reset Game</button></div>
       </section>
 
       <section class="card leaderboard">
-        <div class="card-title">
-          <h2>Leaderboard</h2>
-          <span class="badge">Top 10</span>
-        </div>
-        <table id="lbTable">
-          <thead><tr><th>🏅 Nickname</th><th>Wins</th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="card-title"><h2>Leaderboard</h2><span class="badge">Top 10</span></div>
+        <table id="lbTable"><thead><tr><th>🏅 Nickname</th><th>Wins</th></tr></thead><tbody></tbody></table>
       </section>
     </main>
 
