@@ -24,6 +24,7 @@
 
   function buildBoard(){
     boardEl.innerHTML='';
+    boardEl.className='';
     if(currentGame==='ttt'){
       for(let i=0;i<9;i++){ const c=document.createElement('div'); c.className='cell'; c.dataset.index=i; boardEl.appendChild(c); }
       boardEl.className='board board-ttt';
@@ -34,6 +35,7 @@
       for(let r=0;r<8;r++) for(let c=0;c<8;c++){ const tile=document.createElement('div'); tile.className='ck '+(((r+c)%2)?'dark':'light'); tile.dataset.r=r; tile.dataset.c=c; boardEl.appendChild(tile); }
       boardEl.className='board board-ck';
     } else if(currentGame==='bship'){
+      boardEl.className = 'bship-wrap';
       // Build two labeled grids: Your Fleet (left) and Target Grid (right)
       boardEl.innerHTML = '';
       const wrap = document.createElement('div');
