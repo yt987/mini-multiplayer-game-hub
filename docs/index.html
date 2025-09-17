@@ -1,18 +1,74 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <title>Mini Multiplayer Hub</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <h1>Mini Multiplayer Hub v4</h1>
-  <nav>
-    <button onclick="showTab('tictactoe')">Tic Tac Toe</button>
-    <button onclick="showTab('connect4')">Connect Four</button>
-    <button onclick="showTab('checkers')">Checkers</button>
-    <button onclick="showTab('battleship')">Battleship</button>
-  </nav>
-  <div id="game-container"></div>
-  <script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mini Multiplayer Game Hub — v4</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <header class="site-header">
+      <div class="brand">
+        <div class="logo">🎮</div>
+        <div>
+          <h1>Mini Multiplayer Game Hub <span class="tag">v4</span></h1>
+          <p class="subtitle">Create a room, share the code, and play in real time.</p>
+        </div>
+      </div>
+      <nav class="pill-nav">
+        <a href="#" class="tab active" data-game="ttt">Tic-Tac-Toe</a>
+        <a href="#" class="tab" data-game="c4">Connect Four</a>
+        <a href="#" class="tab" data-game="checkers">Checkers</a>
+        <a href="#" class="tab" data-game="bship">Battleship</a>
+      </nav>
+    </header>
+
+    <main class="grid">
+      <section class="card join">
+        <h2>Join / Create Room</h2>
+        <div class="form-row">
+          <label>Nickname</label>
+          <input id="nickname" placeholder="e.g., Yohana" />
+        </div>
+        <div class="form-row">
+          <label>Room ID</label>
+          <input id="roomId" placeholder="e.g., bubbles" />
+        </div>
+        <button id="joinBtn" class="btn-primary">Join Room</button>
+        <p id="status" class="muted"></p>
+      </section>
+
+      <section class="card play">
+        <div class="room-meta">
+          <div>Game: <span id="gameLabel">Tic-Tac-Toe</span></div>
+          <div>Room: <span id="roomLabel">—</span></div>
+          <div>Players: <span id="playersLabel">Waiting…</span></div>
+          <div>Turn: <span id="turnLabel">—</span></div>
+          <div>You are: <span id="youLabel">—</span></div>
+        </div>
+        <div class="board-wrap">
+          <div id="board" class="board"></div>
+          <div id="result" class="result-banner"></div>
+        </div>
+        <div class="actions">
+          <button id="resetBtn" class="btn-ghost">Reset Game</button>
+        </div>
+      </section>
+
+      <section class="card leaderboard">
+        <div class="card-title">
+          <h2>Leaderboard</h2>
+          <span class="badge">Top 10</span>
+        </div>
+        <table id="lbTable">
+          <thead><tr><th>🏅 Nickname</th><th>Wins</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>
